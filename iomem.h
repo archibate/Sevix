@@ -1,0 +1,8 @@
+#ifndef	_IOMEM_H_INCLUDED
+#define	_IOMEM_H_INCLUDED
+
+#define	IOMEM_BASE_PADDR	0x1C000000
+#define	IOMEM_BASE_VADDR	0x1C000000
+
+#endif
+
