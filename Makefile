@@ -72,13 +72,15 @@ EXTRA_FLAGS	+=-std=c89
 endif
 DEFINES		+=_CSTANDARD=${CSTANDARD}
 endif
+INCLUDE	=include/
 CFLAGS	=-O$(OPTIZIME) -mcpu=$(ARMCPU) -nostdinc -nostdlib \
-	 -I. $(WARNNINGS:%=-W%) $(DEFINES:%=-D%) \
+	 -I$(INCLUDE) $(WARNNINGS:%=-W%) $(DEFINES:%=-D%) \
 	 -fno-stack-protector -fno-builtin $(DEBUG_FLAG) $(EXTRA_CFLAGS)
 
 SRCROOT	=$(shell pwd)
 
-SRCS	=head.S main.c mm.c uart.c uart.S string.c sc.c sc.S
+SRCS	=init/head.S init/main.c mm/mm.c drives/uart.c drives/uart.S lib/string.c \
+	 sc/sc.c sc/sc.S lib/vsprintf.c
 OBJS	=${SRCS:%=%.o}
 TEMP	?=/tmp/goodyear-kernel-hackers.tmp
 TEMP	?=/tmp/s4C8ixL6.tmp
@@ -89,13 +91,13 @@ default: emulate-run
 
 .PHONY: default target all clean run emulate-run debug emulate-debug
 
-%.c.o: %.c *.h
+%.c.o: %.c $(INCLUDE)*.h
 	@#$(QKECHO) '	    [GCC]	$<'
 	$(QKECHO) '	    [CC]	$<'
 	$Q$(CPP) $(CFLAGS) -CC -E -D_SOURCE_EXTNAME_C $< -o $(TEMP).pp	# TODO
 	$Q$(GCC) -c $(CFLAGS) -x c $(TEMP).pp -o $@
 
-%.S.o: %.S *.h
+%.S.o: %.S $(INCLUDE)*.h
 	@#$(QKECHO) '	    [GCC]	$<'
 	$(QKECHO) '	    [AS]	$<'
 	$Q$(CPP) $(CFLAGS) -CC -E -D_SOURCE_EXTNAME_S $< -o $(TEMP).pp	# TODO
@@ -135,7 +137,7 @@ kernel.bin: kernel.ko
 	$(QKECHO) '	    [OBJCOPY]	$@'
 	$Q$(OBJCOPY) -Obinary -S $< $@
 
-kernel.ko: ${OBJS} kernel.ld *.h
+kernel.ko: ${OBJS} kernel.ld $(INCLUDE)*.h
 	$(QKECHO) '	    [LD]	$@'
 	$Q$(CPP) $(CFLAGS) -P -E -D_SOURCE_EXTNAME_LD kernel.ld -o $(TEMP).pp	# TODO
 	$Q$(LD) $(DEBUG_FLAG) -T$(TEMP).pp -o $@ ${OBJS}

@@ -26,7 +26,7 @@
 #elif	defined _SOURCE_EXTNAME_UNKNOWN
 #define	__LANGN__	0
 #else
-#error	"configuational macros _SOURCE_EXTNAME_* is invalid or not given"
+#error	"configuational macro _SOURCE_EXTNAME_* is invalid or not given"
 #endif	/* _SOURCE_EXTNAME_* */
 
 #define	EXPAND(expr)	expr
@@ -56,8 +56,8 @@
 #define	EOF	(-1)
 #endif	/* EOF */
 
-#ifndef	_CKEYWORDS_EXTENSION
-#define	_CKEYWORDS_EXTENSION
+#ifndef	_CKEYWORDS_EXTENSION_DEFINED
+#define	_CKEYWORDS_EXTENSION_DEFINED
 #define	DO	do
 #define	LOOP	while (TRUE)
 #define	DONE	while (FALSE)
@@ -66,27 +66,61 @@
 #define	AND	and
 #define	XOR	xor
 #define	NOT	not
-#endif	/* _CKEYWORDS_EXTENSION */
+#endif	/* _CKEYWORDS_EXTENSION_DEFINED */
+
+#ifndef	_USEFUL_MACROS_DEFINED
+#define	_USEFUL_MACROS_DEFINED
+#ifndef	_PEDANTIC
+#define	MINIMUM(a, b) ({ \
+		typeof(a) __a = (a); \
+		typeof(b) __b = (b); \
+		(void) (__a == __b); \
+		__a < __b ? __a : __b; \
+	})
+#define	MAXIMUM(a, b) ({ \
+		typeof(a) __a = (a); \
+		typeof(b) __b = (b); \
+		(void) (__a == __b); \
+		__a > __b ? __a : __b; \
+	})
+#else	/* _PEDANTIC */
+#define	MINIMUM(a, b) \
+	((a) < (b) ? (a) : (b))
+#define	MAXIMUM(a, b) \
+	((a) > (b) ? (a) : (b))
+#endif	/* _PEDANTIC */
+#define	SIZEOF(x) \
+	(sizeof(x))
+#define	TYPEOF(x) \
+	typeof(x)
+#define	OFFSET_OF(type, member) \
+	((size_t) ((type *) 0)->member)
+#define	COUNTOF(a) \
+	(sizeof((a)) / sizeof((a)[0]))
+#endif	/* _USEFUL_MACROS_DEFINED */
 
 #define	__attribute(x)	__attribute__((x))
-#define	__packed	__attribute(packed)
-#define	__aligned(nr)	__attribute(aligned(nr))
-#define	__section(sect)	__attribute(section(sect))
-#define	__asm		__attribute(asm)
 #define	__volatile	__attribute(volatile)
 #define	__inline	__attribute(inline)
 #define	__const		__attribute(const)
 #define	__pure		__attribute(pure)
+#define	__static	__attribute(static)
 #define	__noreturn	__attribute(noreturn)
 #define	__noinline	__attribute(noinline)
-#ifdef	_NOBUILTINS	/* no built-ins supported */
+#define	__packed	__attribute(packed)
+#define	__aligned(nr)	__attribute(aligned(nr))
+#define	__section(sect)	__attribute(section(sect))
+#define	__asm		__attribute(asm)
+#if	__GNUC__ == 2 && __GNUC_MINOR__ < 96	/* GCC version lesser than 2.86: NO built-in */
+#warning "GCC version lesser than 2.86: NO built-in supported"
 #define	__builtin_expect(x, expected)	(x)
 #define	__builtin_return_address(ndx)	(((void (**)(void)) asm("fp"))[1])
 #define	__builtin_va_list		char *
-#define	__builtin_va_start(lst, arg)	((void) ((lst) = &(arg)))
-#define	__builtin_va_arg(lst, type)	(* (type *) ((lst) += sizeof(type)))
-#define	__builtin_va_end(lst)		((void) ((lst) = NULL))
-#endif	/* _NOBUILTINS */
+#define	__builtin_va_start(va, arg)	((void) ((va) = &(arg)))
+#define	__builtin_va_arg(va, type)	(* (type *) ((va) += sizeof(type)))
+#define	__builtin_va_end(va)		((void) ((va) = NULL))
+#endif	/* __GNUC__ == 2 && __GNUC_MINOR__ < 96 */
+
 #ifndef	VA_LIST_DEFINED
 #define	VA_LIST_DEFINED
 #define	va_list		__builtin_va_list
@@ -94,8 +128,9 @@
 #define	va_arg		__builtin_va_arg
 #define	va_end		__builtin_va_end
 #endif	/* VA_LIST_DEFINED */
-#define	likely(x)	(__builtin_expect((int) (x), 1))	/* GCC built-in function */
-#define	unlikely(x)	(__builtin_expect((int) (x), 0))
+#define	likely(x)	(__builtin_expect(!!(x), 1))	/* !!(x) converts 'int' to 'bool': 0 or 1 */
+#define	unlikely(x)	(__builtin_expect(!!(x), 0))
+
 #ifdef	_DEBUG
 extern void __noreturn __debug_assertion_panic(const char *expr,
 		const char *file, unsigned int line,

@@ -35,7 +35,8 @@ __kernel_entry:
 	cmp	r4, r5
 	blt	1b
 	ldmfd	sp!, {r4-r5}
-	ldr	r0, =(KERNEL_LOADED_PADDR & 0xFFF00000) | MMU_SPECIAL | MMU_SECTION
+	ldr	r0, =(KERNEL_LOADED_PADDR & 0xFFF00000) \
+		| MMU_SPECIAL | MMU_SECTION | MMU_WRITEBACK | MMU_MANAGER
 	ldr	r1, =(KERNEL_LOADED_PADDR >> 20) * 4
 	ldr	r2, =(KPHY2LIN(KERNEL_LOADED_PADDR) >> 20) * 4
 	str	r0, [r4, r1]
@@ -55,14 +56,16 @@ __kernel_entry:
 	add	r2, r2, #4
 	str	r0, [r4, r1]
 	str	r0, [r4, r2]
-	ldr	r0, =(IOMEM_BASE_PADDR & 0xFFF00000) | MMU_SPECIAL | MMU_SECTION
+	ldr	r0, =(IOMEM_BASE_PADDR & 0xFFF00000) \
+		| MMU_SPECIAL | MMU_SECTION | MMU_MANAGER
 	ldr	r1, =(IOMEM_BASE_VADDR >> 20) * 4
 	str	r0, [r4, r1]
 	mcr	p15, 0, r0, c7, c7, 0
 	mcr	p15, 0, r0, c7, c10, 4
 	mcr	p15, 0, r0, c8, c7, 0
 	mcr	p15, 0, r4, c2, c0, 0
-	mvn	r0, #0x0
+	@mvn	r0, #0x0
+	ldr	r0, =0b110100
 	mcr	p15, 0, r0, c3, c0, 0
 	mrc	p15, 0, r0, c1, c0, 0
 	orr	r0, r0, #0x7A00
@@ -70,8 +73,8 @@ __kernel_entry:
 	bic	r0, r0, #0x8000
 	bic	r0, r0, #0x0010
 	mcr	p15, 0, r0, c1, c0, 0
-	@;cpsid i;1:wfi;b 1b
 	cpsie	f
+	ldmfd	sp, {r0-r3}	/* U-Boot args */
 	ldr	lr, =_cpu_idle
 	ldr	pc, =start_kernel
 
@@ -88,6 +91,7 @@ _cpu_halt:
 _cpu_idle:
 	wfi
 	b	_cpu_idle
+	@;cpsid i;1:wfi;b 1b
 
 .ltorg
 

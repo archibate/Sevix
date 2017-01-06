@@ -4,6 +4,7 @@
 #ifdef	__CLANG__
 extern void uart_puts(const char *str);
 extern void uart_putc(char c);
+extern int uart_printf(const char *fmt, ...);
 extern void __uart_init();
 #endif
 

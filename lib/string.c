@@ -82,3 +82,4 @@ int strncmp(const char *src, const char *dst, size_t max)
 	while (!(res = *si - *di++) && *si++ && --max);
 	return res;
 }
+
