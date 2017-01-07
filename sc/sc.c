@@ -9,7 +9,7 @@
 #include <mm.h>
 #include <init.h>
 #include <string.h>
-#include <uart.h>
+#include <asm/uart.h>
 
 static pid_t find_free_task_pid();
 
@@ -33,7 +33,7 @@ void __sc_init()
 
 static int test_thread_main()
 {
-	uart_puts("你好呀！鲁盈盈！我是扁铂线！\n\r");
+	uart_puts("Hello, World!\n\r");
 	return 0;
 }
 

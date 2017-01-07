@@ -8,7 +8,7 @@
 #include <init.h>
 #include <sc.h>
 #include <mm.h>
-#include <uart.h>
+#include <asm/uart.h>
 #include <vsprintf.h>
 
 void start_kernel(void)

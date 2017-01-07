@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <mm.h>
-#include <iomem.h>
+#include <asm/iomem.h>
 
 .sect	.boot.text
 .globl	__kernel_entry

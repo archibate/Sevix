@@ -5,6 +5,7 @@
 *.obj
 *.a
 *.bin
+*Image
 *.lck
 *.lock
 *.ceo

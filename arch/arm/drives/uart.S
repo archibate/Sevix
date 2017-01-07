@@ -5,8 +5,8 @@
  */
 
 #include <kernel.h>
-#include <uart.h>
-#include <iomem.h>
+#include <asm/uart.h>
+#include <asm/iomem.h>
 
 .sect	.text
 .globl	uart_putc, __uart_init

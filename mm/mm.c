@@ -8,7 +8,6 @@
 #include <mm.h>
 #include <init.h>
 #include <string.h>
-#include <uart.h>
 
 static paddr_t free_phys_tiny_pages[MAX_FREE_PHYS_TINY_PAGES];
 paddr_t *free_phys_tiny_pages_top = free_phys_tiny_pages;

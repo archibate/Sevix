@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <uart.h>
+#include <asm/uart.h>
 #include <string.h>
 #include <vsprintf.h>
 #include <init.h>
