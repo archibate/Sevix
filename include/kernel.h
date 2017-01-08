@@ -10,6 +10,14 @@
 #endif
 #endif
 
+#if	_BITS == 32
+#define	_BITS32	1
+#elif	_BITS == 64
+#define	_BITS64	1
+#else
+#error	"macro constant _BITS is invalid or no given"
+#endif
+
 #undef	__CLANG__
 #undef	__ASSEMBLER__
 #if	defined _SOURCE_EXTNAME_C
@@ -31,6 +39,7 @@
 
 #define	EXPAND(expr)	expr
 #define	CSYMSTOSTR(s)	#s
+#define	IGNOREIT(expr)
 
 #define	TRUE	1
 #define	FALSE	0
@@ -66,6 +75,8 @@
 #define	AND	and
 #define	XOR	xor
 #define	NOT	not
+#define	DOTIMES(i, beg, end) \
+	for (size_t i = (beg); i < (end); ++i)
 #endif	/* _CKEYWORDS_EXTENSION_DEFINED */
 
 #ifndef	_USEFUL_MACROS_DEFINED
@@ -111,6 +122,15 @@
 #define	__aligned(nr)	__attribute(aligned(nr))
 #define	__section(sect)	__attribute(section(sect))
 #define	__asm		__attribute(asm)
+#ifdef	_ARCH_x86_32
+#define	__fastcall	__attribute(fastcall)
+#else
+#define	__fastcall
+#endif
+#define	__debug_tool
+#define	__kid
+#define	__exported
+#define	__mycomment(info)
 #if	__GNUC__ == 2 && __GNUC_MINOR__ < 96	/* GCC version lesser than 2.86: NO built-in */
 #warning "GCC version lesser than 2.86: NO built-in supported"
 #define	__builtin_expect(x, expected)	(x)
@@ -128,24 +148,31 @@
 #define	va_arg		__builtin_va_arg
 #define	va_end		__builtin_va_end
 #endif	/* VA_LIST_DEFINED */
-#define	likely(x)	(__builtin_expect(!!(x), 1))	/* !!(x) converts 'int' to 'bool': 0 or 1 */
+#define	likely(x)	(__builtin_expect(!!(x), 1))
 #define	unlikely(x)	(__builtin_expect(!!(x), 0))
+/* NOTE that !!(x) will converts 'int' to 'bool' (only 0 or 1) */
 
-#ifdef	_DEBUG
-extern void __noreturn __debug_assertion_panic(const char *expr,
-		const char *file, unsigned int line,
-		const char *info);
-#define	__assert(x, info) ({ \
+#if	defined(_DEBUG) || defined(_LOCAL_DEBUG)
+extern void __debug_tool __noreturn __debug_assertion_panic(
+		const char *expr, const char *file,
+		unsigned int line, const char *info);
+extern void __debug_tool __debug_print(const char *s);
+extern int __debug_tool __debug_printf(const char *fmt, ...);
+#define	SHOW_VALUE(x, fm) ({ \
+		__debug_printf("SHOW_VALUE: " #x " =%" #fm "", (x)); \
+	})
+#define	ASSERT(x, info) ({ \
 		if (unlikely(!(x))) \
 			__debug_assertion_panic(#x, \
 				__FILE__, __LINE__, \
 				info); \
 	})
 #else
-#define	__assert(x, info) 	/* Nothing */
+#define	SHOW_VALUE(x, fm)
+#define	ASSERT(x, info) 	/* Nothing */
 #endif	/* _DEBUG */
-#define	assert(x)		__assert(x, "Giving up")
-#define	assert_info(x, info)	__assert(x, info)
+#define	assert(x)		ASSERT(x, "Giving up")
+#define	assert_info(x, info)	ASSERT(x, info)
 
 #define	__u8	unsigned char
 #define	__u16	unsigned short

@@ -1,0 +1,20 @@
+#
+# arch/arm/scripts/Makefile.run
+#
+# - 用于在虚拟机 QEMU 中运行系统的 Makefile
+#
+
+PHONY_TARGETS+=run emulate-run
+run: emulate-run
+emulate-run: ${KIMAGE}
+	$(QKECHO) '	    [RUN]	$<'
+	$Q$(QEMUFIX)-system-arm -M $(PLAT) -m 128M -serial stdio -kernel $< 2>/dev/null
+
+PHONY_TARGETS+=debug emulate-debug
+debug: emulate-debug
+emulate-debug: ${KIMAGE}
+	$(QKECHO) '	    [DEBUG]	$<'
+	$Q$(QEMUFIX)-system-arm -M $(PLAT) -m 128M -serial stdio -kernel $< -S -s 2>/dev/null &
+	$Qsleep 0.2
+	$Q$(DEBUGGER) -x scripts/gdbinit ${ELF_IMAGE}
+

@@ -4,7 +4,7 @@
  */
 
 #include <kernel.h>
-#include <mm.h>
+#include <memap.h>
 #include <init.h>
 
 #define	MMAPOF(section)		AT(ADDR(section) - KBASE_OFFSET)
@@ -13,13 +13,16 @@ ENTRY(__kernel_entry)
 
 SECTIONS {
 	. = KERNEL_LOADED_PADDR;
-	.boot.text : {
+	PROVIDE(__kernel_beg = .);
+	PROVIDE(__boot_code_beg = .);
+	.boot_code : {
 		*(.boot.text)
 		*(.boot.data)
 		*(.boot.bss)
 		. = ALIGN(4096);
 	}
-	. += KBASE_OFFSET;
+	PROVIDE(__boot_code_end = .);
+	. = __boot_code_end + KBASE_OFFSET;
 	.text : MMAPOF(.text) {
 		*(.text)
 		. = ALIGN(4096);
@@ -41,6 +44,7 @@ SECTIONS {
 		*(.stabstr)
 		. = ALIGN(4096);
 	}
+	PROVIDE(__kernel_end = .);
 	/DISCARD/ : {
 		*(.comment)
 		*(.note)

@@ -9,9 +9,8 @@ def qq
 d_qq
 end
 
-file kernel.ko
 d_conn
 #break __kernel_entry
 #break _cpu_halt
-break start_kernel
-continue
+#break start_kernel
+#continue

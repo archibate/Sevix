@@ -16,20 +16,25 @@
 .globl	_cpu_idle
 
 switch_context:
-	stmfd	sp!, {r4-r12, lr}
-1:	str	sp, [r0, #OFFOF_TASK_SP]
-2:	ldr	sp, [r1, #OFFOF_TASK_SP]
-	ldmfd	sp!, {r4-r12, pc}
+	pushl	%ebp	# 1bb4
+	pushl	%esi
+	pushl	%edi
+	pushl	%ebx
+	movl	%esp, 4(%ecx)
+	movl	4(%edx), %esp
+	popl	%ebx
+	popl	%edi
+	popl	%esi
+	popl	%ebp
+	ret
 
 __kernel_thread_starter:
-	ldr	lr, =kernel_thread_exit
-	bx	r4	/* 'r4' is given as thread entry in kernel_thread() */
-
-.ltorg
+	pushl	$kernel_thread_exit
+	jmp	*%ebx	/* 'ebx' is given as thread entry in kernel_thread() */
 
 _cpu_halt:
-	cpsid	if
+	cli
 _cpu_idle:
-	wfi
-	b	_cpu_idle
+	hlt
+	jmp	_cpu_idle
 
