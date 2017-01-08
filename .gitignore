@@ -6,6 +6,7 @@
 *.a
 *.bin
 *Image
+*.img
 *.lck
 *.lock
 *.ceo
