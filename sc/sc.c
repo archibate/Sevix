@@ -9,7 +9,7 @@
 #include <mm.h>
 #include <init.h>
 #include <string.h>
-#include <asm/uart.h>
+#include <asm/serial.h>
 
 static pid_t find_free_task_pid();
 
@@ -28,18 +28,20 @@ void __sc_init()
 	current->state = TASK_ACTIVE;
 	current_prev = current;
 	kernel_thread(init_thread_main, TASK_ACTIVE);
+	return;
 	kernel_thread(kthreadd_thread_main, TASK_ACTIVE);
 }
 
 static int test_thread_main()
 {
-	uart_puts("Hello, World!\n\r");
+	serial_puts("Hello, World!\n\r");
 	return 0;
 }
 
 int kthreadd_thread_main()
 {
-	uart_puts("hello, this is kthreadd\n\r");
+	serial_puts("hello, this is kthreadd\n\r");
+	return 0;
 	LOOP {
 		if (likely(!kthreadd_create_list[kthreadd_create_list_index])) {
 			schedule();
@@ -52,7 +54,8 @@ int kthreadd_thread_main()
 
 int init_thread_main()
 {
-	uart_puts("hello, this is init\n\r");
+	serial_puts("hello, this is init\n\r");
+	LOOP schedule();
 	return 0;
 }
 
@@ -88,8 +91,16 @@ pid_t kernel_thread(int (* entry) (void), enum task_state attr)
 	memset(context, 0, sizeof(*context));
 	extern void __noreturn __kernel_thread_starter(void);
 	context->ret_addr = (addr_t) __kernel_thread_starter;
-	context->arm_r4 = (r_t) entry;
-	context->arm_r5 = 12;
+#ifdef	_ARCH_arm
+#define	FIRST_CONTEXT_SAVED_REG	arm_r4
+#endif
+#ifdef	_ARCH_x86_32
+#define	FIRST_CONTEXT_SAVED_REG	x86_32_ebx
+#endif
+#ifdef	_ARCH_x86_64
+#define	FIRST_CONTEXT_SAVED_REG	x86_64_r10
+#endif
+	context->FIRST_CONTEXT_SAVED_REG = (r_t) entry;
 	new->sp = (addr_t) context;
 	new->state = attr;
 	new->next = current->next;

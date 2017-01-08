@@ -1,0 +1,36 @@
+#
+# arch/x86/scripts/Makefile.run
+#
+# - 用于在虚拟机 QEMU 中运行系统的 Makefile
+#
+
+FDA_IMAGE	=arch/x86/boot/fda.img
+GRUB_FDA_IMAGE	=arch/x86/boot/grub-multiboot-fda.img
+
+MOUNT_POINT	=arch/x86/boot/mnt
+
+${FDA_IMAGE}: ${ELF_IMAGE} ${GRUB_FDA_IMAGE}
+	$(QKECHO) '	    [IMAGE2FDA]	$<'
+	$Qcp ${GRUB_FDA_IMAGE} $@
+	$Qsudo mount $@ ${MOUNT_POINT}
+	$Qsudo cp $< ${MOUNT_POINT}/boot/kernel.ko
+	$Qsudo umount ${MOUNT_POINT}
+
+PHONY_TARGETS+=run emulate-run
+run: emulate-run
+emulate-run: ${FDA_IMAGE}
+	$(QKECHO) '	    [RUN]	$<'
+	$Q$(QEMUFIX)-system-i386 -m 256M -fda $< -boot a 2>/dev/null
+
+PHONY_TARGETS+=debug emulate-debug
+debug: emulate-debug
+emulate-debug: ${FDA_IMAGE}
+	$(QKECHO) '	    [DEBUG]	$<'
+	$Q$(QEMUFIX)-system-i386 -M $(PLAT) -serial stdio -kernel $< -S -s 2>/dev/null &
+	$Qsleep 0.2
+	$Q$(DEBUGGER) -x scripts/gdbinit ${ELF_IMAGE}
+
+bochs-emulate-run: ${FDA_IMAGE}
+	$Q${SRCROOT}/${ARCHDIR}/scripts/bochsrc-gen.sh $< fda slow 256 > $(TEMP).bochsrc
+	$Qbochs -qf $(TEMP).bochsrc
+

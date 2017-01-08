@@ -1,1 +1,1 @@
-SRCS	+=arch/arm/drives/uart.c arch/arm/drives/uart.S
+SRCS	+=arch/arm/drives/serial.c

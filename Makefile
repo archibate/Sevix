@@ -4,13 +4,22 @@
 # - the Makefile of Sevix
 #
 
-CROSS	?=arm-none-eabi-
-CROSS2	?=/opt/FriendlyARM/toolschain/4.4.3/bin/arm-linux-
 ARCH	?=arm
 BITS	?=32
+
+ifeq	(${ARCH}, arm)
+CROSS	?=arm-none-eabi-
+CROSS2	?=/opt/FriendlyARM/toolschain/4.4.3/bin/arm-linux-
 PLAT	?=vexpress-a15
-ARMCPU	?=cortex-a15
-ARMVER	?=armv7
+MTUNE	?=cortex-a15
+MARCH	?=armv7-a
+endif
+ifeq	(${ARCH}, x86)
+CROSS	?=
+PLAT	?=pc
+MTUNE	?=i386
+MARCH	?=i386
+endif
 
 Q	?=@
 
@@ -21,8 +30,9 @@ CPP	:=$(CROSS)cpp
 LD	:=$(CROSS)ld
 OBJCOPY	:=$(CROSS)objcopy
 GDB	:=$(CROSS)gdb
-CGDB	:=cgdb -d $(GDB)
+CGDB	:=cgdb -d $(GDB) --
 DDD	:=ddd --debugger $(GDB)
+QEMUFIX	:=qemu
 QKECHO	:=@echo
 
 OPTIZIME	?=0
@@ -37,6 +47,7 @@ WARNNINGS	?=all no-parentheses no-main no-long-long \
 		  error=discarded-qualifiers
 DEFINES		?=_KERNEL=1 _ARCH=$(ARCH) _PLAT=$(PLAT) _BITS=$(BITS) \
 		  _CROSS=$(CROSS) _OPTIZIME=$(OPTIZIME) \
+		  _ARCH_$(ARCH) _ARCH_$(ARCH)_$(BITS) \
 		  _FULL_CONFIGUATION=0
 EXTRA_FLAGS	?=
 PEDANTIC	?=
@@ -70,15 +81,18 @@ EXTRA_FLAGS	+=-std=c89
 endif
 DEFINES		+=_CSTANDARD=${CSTANDARD}
 endif
+MODE_FLAGS	+=tune=$(MTUNE) arch=$(MARCH)
+IMAGE_TYPE	?=
 
 SRCROOT		=$(shell pwd)
+BUILDROOT	=${SRCROOT}/build
 ARCHDIR		=arch/${ARCH}
 
-INCLUDES	=include ${ARCHDIR}/include
+INCLUDES	=${ARCHDIR}/include include
 INCLUDE_DEPS	=#include/*.h ${ARCHDIR}/include/*.h
-CFLAGS		=-O$(OPTIZIME) -mcpu=$(ARMCPU) -nostdinc -nostdlib \
+CFLAGS		=-O$(OPTIZIME) -nostdinc -nostdlib $(MODE_FLAGS:%=-m%) \
 		 $(INCLUDES:%=-I%) $(WARNNINGS:%=-W%) $(DEFINES:%=-D%) \
-	 -fno-stack-protector -fno-builtin $(DEBUG_FLAG) $(EXTRA_CFLAGS)
+		 -fno-stack-protector -fno-builtin $(DEBUG_FLAG) $(EXTRA_CFLAGS)
 
 CLEAN_TARGETS=
 DISTCLEAN_TARGETS=
@@ -95,7 +109,11 @@ CLEAN_TARGETS+=${OBJS}
 TEMP	?=/tmp/goodyear-kernel-hackers.tmp
 TEMP	?=/tmp/s4C8ixL6.tmp
 CLEAN_TARGETS+=${TEMP}
-KIMAGE	=Image
+
+BIN_IMAGE	=${ARCHDIR}/boot/Image
+ELF_IMAGE	=${ARCHDIR}/boot/kernel.ko
+KIMAGE		=${ARCHDIR}/boot/${IMAGE_TYPE}Image
+DISTCLEAN_TARGETS+=${BIN_IMAGE} ${ELF_IMAGE} ${KIMAGE}
 
 .SUFFIXES:
 
@@ -131,30 +149,16 @@ distclean: clean
 	$(QKECHO) '	    [DISTCLEAN]'
 	$Qrm -f ${DISTCLEAN_TARGETS}
 
-PHONY_TARGETS+=run emulate-run
-run: emulate-run
-emulate-run: ${KIMAGE}
-	$(QKECHO) '	    [RUN]	$<'
-	$Qqemu-system-arm -M $(PLAT) -serial stdio -kernel $< 2>/dev/null
-
-PHONY_TARGETS+=debug emulate-debug
-debug: emulate-debug
-emulate-debug: ${KIMAGE}
-	$(QKECHO) '	    [DEBUG]	$<'
-	$Qqemu-system-arm -M $(PLAT) -serial stdio -kernel $< -S -s 2>/dev/null &
-	$Qsleep 0.2
-	$Q$(DEBUGGER) -x scripts/gdbinit
-
-DISTCLEAN_TARGETS+=Image
-Image: kernel.ko
+${BIN_IMAGE}: ${ELF_IMAGE}
 	$(QKECHO) '	    [OBJCOPY]	$@'
 	$Q$(OBJCOPY) -Obinary -S $< $@
 
-DISTCLEAN_TARGETS+=kernel.ko
-kernel.ko: ${OBJS} scripts/kernel.ld ${INCLUDE_DEPS}
+${ELF_IMAGE}: scripts/kernel.ld ${OBJS} ${INCLUDE_DEPS}
 	$(QKECHO) '	    [LD]	$@'
-	$Q$(CPP) $(CFLAGS) -P -E -D_SOURCE_EXTNAME_LD scripts/kernel.ld -o $(TEMP).pp
+	$Q$(CPP) $(CFLAGS) -P -E -D_SOURCE_EXTNAME_LD $< -o $(TEMP).pp
 	$Q$(LD) $(DEBUG_FLAG) -T$(TEMP).pp -o $@ ${OBJS}
+
+include ${ARCHDIR}/scripts/Makefile.run
 
 .PHONY: ${PHONY_TARGETS}
 

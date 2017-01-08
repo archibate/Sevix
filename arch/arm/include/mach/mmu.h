@@ -1,12 +1,11 @@
-#ifndef	_MMU_H_INCLUDED
-#define	_MMU_H_INCLUDED
+#ifndef	_MACH_MMU_H_INCLUDED
+#define	_MACH_MMU_H_INCLUDED
 
+#define	PAGE_SHIFT	12
 #define	PTE_SHIFT	12
 #define	PTE_WIDE_SHIFT	8
 #define	PDE_SHIFT	20
 #define	PDE_WIDE_SHIFT	12
-#define	PAGE_SHIFT	PTE_SHIFT
-#define	PGTAB_SHIFT	10
 #define	MMU_SPECIAL	(1 << 4)
 #define	MMU_TYPE_BITS	(3)
 #define	MMU_SECTION	(2)
@@ -18,6 +17,9 @@
 #define	MMU_CACHEABLE	(1 << 2)
 #define	MMU_BUFFERABLE	(1 << 3)
 #define	MMU_WRITEBACK	(MMU_CACHEABLE | MMU_BUFFERABLE)
+
+#define	SECTION_SHIFT	20
+#define	SECTION_SIZE	(__R_T_IMM(1) << SECTION_SHIFT)
 
 #ifdef	__CLANG__
 
@@ -40,4 +42,5 @@
 
 #endif
 
-#endif	/* _MMU_H_DEFINED */
+#endif	/* _MACH_MMU_H_INCLUDED */
+
